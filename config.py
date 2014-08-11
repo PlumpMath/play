@@ -2,15 +2,32 @@
 # configuration file for goBananas
 from panda3d.core import Point3, Point4
 
-
+environ = 'original'
+manual = True
+numBananas = 2
+bananaRepeat = False
+repeatNumber = 0
+path_models = '../goBananas/'
+bananaDir = '../goBananas/models/bananas/'
+# Load 2 bananas for testing, know where they are!
+# (no effect if manual False)
+bananaModel = '../goBananas/models/bananas/banana.bam'
+posBananas = [[-5, 0], [0, -5]]
+#bananaLoc = Point3(-10, 0, 1)
+bananaScale = 1
+bananaH = 0
+#bananaLoc2 = Point3(0, -10, 1)
+#posBananas = [bananaLoc, bananaLoc2]
+# stuff so mobananas works
 tooClose = 1
-# Banana Positions
-minDistance = -10
-maxDistance = 10
-minFwDistance = -10
-maxFwDistance = 10
+avatarRadius = 0.2
+minXDistance = -10
+maxXDistance = 10
+minYDistance = -10
+maxYDistance = 10
 
 #### Core PandaEPL settings ####
+
 FOV = 60
 
 # Movement
@@ -19,11 +36,11 @@ fullForwardSpeed = 2.8
 fullBackwardSpeed = 0
 turningAcceleration = 130
 fullTurningSpeed = 55
-turningLinearSpeed = 2
-maxTurningLinearSpeed = 90.0
-minTurningLinearSpeedReqd = 1.0
-minTurningLinearSpeed = 1.5
-minTurningLinearSpeedIncrement = 0.5
+# turningLinearSpeed = 2
+# maxTurningLinearSpeed = 90.0
+# minTurningLinearSpeedReqd = 1.0
+# minTurningLinearSpeed = 1.5
+# minTurningLinearSpeedIncrement = 0.5
 
 # Point3 is global from panda3d.core
 initialPos = Point3(0, 0, 1)
@@ -32,27 +49,24 @@ initialPos = Point3(0, 0, 1)
 # further distance, change this, but does no good if 
 # thing running into has huge radius
 #avatarRadius = 0.3
-avatarRadius = 0.2
+#avatarRadius = 0.2
 
 cameraPos = Point3(0, 0, 0)
 friction = 0.4  # 0.4
 movementType = 'walking'  # car | walking
 
-instructSize = 0.1
-instructFont = '/c/Windows/Fonts/times.ttf'
-instructBgColor = Point4(0, 0, 0, 1)
-instructFgColor = Point4(1, 1, 1, 1)
-instructMargin = 0.06
-instructSeeAll = False
-
-# Experiment-specific settings
+#instructSize = 0.1
+#instructFont = '/c/Windows/Fonts/times.ttf'
+#instructBgColor = Point4(0, 0, 0, 1)
+#instructFgColor = Point4(1, 1, 1, 1)
+#instructMargin = 0.06
+#instructSeeAll = False
 
 # (Non-default) command keys.
 # Keyboard is global from pandaepl.common
 if 'Keyboard' in globals():
     keyboard = Keyboard.getInstance()
+    keyboard.bind("change_axis", "space")
     keyboard.bind("close", ["escape", "q"])
+    keyboard.bind("restart", "y")
     keyboard.bind("toggleDebug", ["escape", "d"])
-    keyboard.bind("upTurnSpeed", "t")
-    keyboard.bind("downTurnSpeed", "g")
-
