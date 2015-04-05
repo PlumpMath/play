@@ -11,11 +11,11 @@ class FakeWorld(DirectObject):
     def __init__(self):
         DirectObject.__init__(self)
         self.base = ShowBase()
-        courtyard = loader.loadModel('../panda_eggs/square_courtyard.egg')
+        #courtyard = loader.loadModel('../panda_eggs/square_courtyard.egg')
         #courtyard.reparentTo(self.base.render)
-        myTexture = loader.loadTexture("textures/square_courtyard_fill.tga")
-        tex = loader.loadTexture('maps/noise.rgb')
-        courtyard.setTexture(tex, 1)
+        #myTexture = loader.loadTexture("textures/square_courtyard_fill.tga")
+        #tex = loader.loadTexture('maps/noise.rgb')
+        #courtyard.setTexture(tex, 1)
 
         #butterfly = loader.loadModel('../panda_eggs/butterfly.egg')
         #butterfly.reparentTo(self.base.render)
@@ -26,8 +26,8 @@ class FakeWorld(DirectObject):
         # Add the spinCameraTask procedure to the task manager.
         #self.base.taskMgr.add(self.spinCameraTask, "SpinCameraTask")
 
-        self.butterfly = Actor('../panda_eggs/butterfly.egg', {
-            'fly': '../panda_eggs/butterfly_animate.egg'
+        self.butterfly = Actor('models/butterfly.egg', {
+            'fly': 'models/butterfly_animate.egg'
         })
         self.butterfly.reparentTo(self.base.render)
         self.butterfly.setPos(0, 15, 1)
