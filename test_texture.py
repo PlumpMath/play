@@ -11,7 +11,7 @@ class FakeWorld(DirectObject):
     def __init__(self):
         DirectObject.__init__(self)
         self.base = ShowBase()
-        #courtyard = loader.loadModel('models/square_courtyard.egg')
+        #courtyard = loader.loadModel('../panda_eggs/square_courtyard.egg')
         #courtyard.reparentTo(self.base.render)
         #myTexture = loader.loadTexture("textures/square_courtyard_fill.tga")
         #tex = loader.loadTexture('maps/noise.rgb')

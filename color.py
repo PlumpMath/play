@@ -27,11 +27,11 @@ class ColorWorld(object):
         self.environ.reparentTo(self.base.render)
         self.environ.setPos(0, 0, 0)
 
-        # self.frameTask = self.base.taskMgr.add(self.frame_loop, "frame_loop")
-        # self.frameTask.last = 0
+        self.frameTask = self.base.taskMgr.add(self.frame_loop, "frame_loop")
+        self.frameTask.last = 0
 
         # Add the spinCameraTask procedure to the task manager.
-        self.base.taskMgr.add(self.spinCameraTask, "SpinCameraTask")
+        # self.base.taskMgr.add(self.spinCameraTask, "SpinCameraTask")
 
     # Define a procedure to move the camera.
     def spinCameraTask(self, task):
@@ -53,6 +53,8 @@ class ColorWorld(object):
     def frame_loop(self, task):
         dt = task.time - task.last
         task.last = task.time
+        self.base.camera.setPos(1, -20, 3)
+        self.base.camera.setHpr(0.5, 0, 0)
         #self.move_ball(dt)
         return task.cont
 
