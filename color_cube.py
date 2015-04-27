@@ -111,25 +111,25 @@ def makeSquare(x1, y1, z1, x2, y2, z2):
 # Note: it isn't particularly efficient to make every face as a separate Geom.
 # instead, it would be better to create one Geom holding all of the faces.
 square0 = makeSquare(-1, -1, -1, 1, -1, 1)
-square1 = makeSquare(-1, 1, -1, 1, 1, 1)
-square2 = makeSquare(-1, 1, 1, 1, -1, 1)
-square3 = makeSquare(-1, 1, -1, 1, -1, -1)
-square4 = makeSquare(-1, -1, -1, -1, 1, 1)
-square5 = makeSquare(1, -1, -1, 1, 1, 1)
+#square1 = makeSquare(-1, 1, -1, 1, 1, 1)
+#square2 = makeSquare(-1, 1, 1, 1, -1, 1)
+#square3 = makeSquare(-1, 1, -1, 1, -1, -1)
+#square4 = makeSquare(-1, -1, -1, -1, 1, 1)
+#square5 = makeSquare(1, -1, -1, 1, 1, 1)
 snode = GeomNode('square')
 snode.addGeom(square0)
-snode.addGeom(square1)
-snode.addGeom(square2)
-snode.addGeom(square3)
-snode.addGeom(square4)
-snode.addGeom(square5)
+#snode.addGeom(square1)
+#snode.addGeom(square2)
+#snode.addGeom(square3)
+#snode.addGeom(square4)
+#snode.addGeom(square5)
 
 cube = render.attachNewNode(snode)
 # cube.hprInterval(1.5, (360, 360, 360)).loop()
 
 # OpenGl by default only draws "front faces" (polygons whose vertices are
 # specified CCW).
-cube.setTwoSided(True)
+#cube.setTwoSided(True)
 
 
 class MyTapper(DirectObject):

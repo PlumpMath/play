@@ -25,7 +25,6 @@ class ColorWorld(DirectObject):
             pygame.joystick.init()
             js_count = pygame.joystick.get_count()
         if js_count > 1:
-            code = "More than one joystick connected"
             raise NotImplementedError("More than one Joystick is connected")
         elif js_count == 1:
             self.joystick = pygame.joystick.Joystick(0)
@@ -59,80 +58,58 @@ class ColorWorld(DirectObject):
         self.base.camera.setPos(0, 0, 0)
         self.avatar.setPos(-10, -10, 2)
 
-        # self.vel = [0, 0, 0]
-        # values from joystick are 0 to 1, need to make
-        # larger range
-        # self.vel = LVector3(0)
-        # self.vel[1] = 4
-        # print self.vel
         self.vel_base = 3
         self.max_vel = [500, 500, 0]
         self.setup_inputs()
         self.frameTask = self.base.taskMgr.add(self.frame_loop, "frame_loop")
         self.frameTask.last = 0  # task time of the last frame
-        print 'end init'
+        # print 'end init'
 
     def frame_loop(self, task):
         dt = task.time - task.last
         task.last = task.time
-        # if joystick and keyboard are doing the opposite, counteract each other
-        change = self.poll_joystick()
-        #self.poll_keyboard(change)
+        self.poll_joystick()
+        self.poll_keyboard()
         self.move_avatar(dt)
         return task.cont
 
     def poll_joystick(self):
-        # joystick input -1 to 1,
-        change = [False, False]
         if not self.joystick:
-            return change
-        make_zero = 0
-        print 'new poll'
-        print self.joystick.get_axis(0)
-        print self.joystick.get_axis(1)
-        # x = self.joystick.get_axis(0)
-        # y = self.joystick.get_axis(1)
-        # if -self.threshold > x < self.threshold and -self.threshold > y < self.threshold:
-        #     x = 0
-        #     y = 0
-        # if self.velocity.x != x:
-        #     change[0] = True
-        #     self.velocity.x = x
-        # if self.velocity == y:
-        #     change[1] = True
-        #     self.velocity.y = y
-
+            return
+        # joystick input -1 to 1,
         for ev in pygame.event.get():
-            if ev.type is pygame.JOYAXISMOTION and ev.axis < 2:
-                change[ev.axis] = True
-                # why does this go to zero when I hold the joystick in one place?!?!?
-                print 'in loop', ev.value, ev.axis
-                # initially set to exact numbers
-                if ev.axis == 1:
-                    self.velocity.y = -ev.value
-                else:
-                    self.velocity.x = ev.value
-                # but if both x and y are under threshold, assume we are stopped
-                if -self.threshold > ev.value < self.threshold:
-                    # print 'make zero', make_zero
-                    make_zero += 1
-                    # if both are under threshold, set to zero.
-                    if make_zero == 2:
-                        #print 'stop'
-                        self.velocity.x = 0
-                        self.velocity.y = 0
-        return change
+            pass
+        x = self.joystick.get_axis(0)
+        y = self.joystick.get_axis(1)
 
-    def poll_keyboard(self, change):
+        # if both are under threshold, assume noise
+        # if one is deliberate, noise in the other won't affect much
+        if -self.threshold < x < self.threshold and -self.threshold < y < self.threshold:
+            # print 'threshold'
+            # print 'x', x, 'y', y
+            self.velocity.x = 0
+            self.velocity.y = 0
+        else:
+            self.velocity.x = x
+            self.velocity.y = -y
+
+    def poll_keyboard(self):
         x_speed = 0.5
         y_speed = 0.5
         is_down = self.base.mouseWatcherNode.is_button_down
-        # exactly counteract joystick, if used
-        if change[0]:
-            x_speed = -self.velocity.x
-        if change[1]:
-            y_speed = -self.velocity.y
-
+        # Instead of usual movement, exactly counteract joystick,
+        # if using joystick and currently moving
+        if self.joystick:
+            if abs(self.velocity.x) > self.threshold:
+                if self.velocity.x > 0:
+                    x_speed = self.velocity.x
+                else:
+                    x_speed = -self.velocity.x
+            if abs(self.velocity.y) > self.threshold:
+                if self.velocity.y > 0:
+                    y_speed = self.velocity.y
+                else:
+                    y_speed = -self.velocity.y
         if is_down(KeyboardButton.up()):
             self.velocity.y += y_speed
         if is_down(KeyboardButton.down()):
@@ -158,52 +135,8 @@ class ColorWorld(DirectObject):
             # print 'velocity', self.velocity
             # this makes for smooth movement
             self.avatar.setFluidPos(self.avatar, self.velocity * self.vel_base * dt)
-            # x, y, z = [dt * i for i in self.vel]
-            # pos = Vec3(x, y, z)
-            # print pos
-            # self.avatar.setFluidPos(self.avatar, pos)
-
-    # def set_move(self, js_dir, magnitude):
-    #     # print(js_dir, magnitude)
-    #     # Threshold. If too low, noise will create movement.
-    #     if abs(magnitude) < 0.1:
-    #         magnitude = 0
-    #     x_mag = 0
-    #     y_mag = 0
-    #     # we are moving the camera in the opposite direction of the joystick,
-    #     # x and y inputs will both be inverted
-    #     if js_dir == 'x' or js_dir == 'x_key':
-    #         # print js_input
-    #         # x direction
-    #         x_mag = magnitude
-    #         # print('x_mag', self.x_mag)
-    #     else:
-    #         # y direction is reversed,
-    #         y_mag = -magnitude
-    #     new_vel = [x_mag, y_mag, 0]
-    #     # print new_vel
-    #     # all velocities multiplied by base
-    #     # if a velocity is greater than its max, velocity is max
-    #     for i, j in enumerate(new_vel):
-    #         self.vel[i] = j * self.vel_base
-    #         if self.vel[i] > self.max_vel[i]:
-    #             self.vel[i] = self.max_vel[i]
 
     def setup_inputs(self):
-        # self.accept('x_axis', self.set_move, ['x'])
-        # self.accept('y_axis', self.set_move, ['y'])
-        # self.accept('arrow_right', self.set_move, ['x_key', 0.5])
-        # self.accept('arrow_left', self.set_move, ['x_key', -0.5])
-        # self.accept('arrow_right-up', self.set_move, ['x_key', 0])
-        # self.accept('arrow_left-up', self.set_move, ['x_key', 0])
-        # self.accept('arrow_right-repeat', self.set_move, ['x_key', 0.5])
-        # self.accept('arrow_left-repeat', self.set_move, ['x_key', -0.5])
-        # self.accept('arrow_up', self.set_move, ['y_key', -0.5])
-        # self.accept('arrow_up-up', self.set_move, ['y_key', 0])
-        # self.accept('arrow_up-repeat', self.set_move, ['y_key', -0.5])
-        # self.accept('arrow_down', self.set_move, ['y_key', 0.5])
-        # self.accept('arrow_down-up', self.set_move, ['y_key', 0])
-        # self.accept('arrow_down-repeat', self.set_move, ['y_key', 0.5])
         self.accept('q', self.close)
 
     def close(self):

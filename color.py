@@ -1,63 +1,83 @@
 from direct.showbase.ShowBase import ShowBase
-from panda3d.core import PNMImage, Texture, CardMaker
-from direct.task import Task
-from math import pi, sin, cos
+from panda3d.core import GeomVertexFormat, GeomVertexData
+from panda3d.core import Geom, GeomTriangles, GeomVertexWriter
+from panda3d.core import GeomNode
+from panda3d.core import LVector3
+
+
+# You can't normalize inline so this is a helper function
+def normalized(*args):
+    my_vec = LVector3(*args)
+    my_vec.normalize()
+    return my_vec
+
+
+# helper function to make a square given the Lower-Left-Hand and
+# Upper-Right-Hand corners
+def make_square(x1, y1, z1, x2, y2, z2):
+    v_format = GeomVertexFormat.getV3n3cpt2()
+    v_data = GeomVertexData('square', v_format, Geom.UHDynamic)
+
+    vertex = GeomVertexWriter(v_data, 'vertex')
+    normal = GeomVertexWriter(v_data, 'normal')
+    color = GeomVertexWriter(v_data, 'color')
+    tex_coord = GeomVertexWriter(v_data, 'texcoord')
+
+    # make sure we draw the sqaure in the right plane
+    if x1 != x2:
+        vertex.addData3(x1, y1, z1)
+        vertex.addData3(x2, y1, z1)
+        vertex.addData3(x2, y2, z2)
+        vertex.addData3(x1, y2, z2)
+
+        normal.addData3(normalized(2 * x1 - 1, 2 * y1 - 1, 2 * z1 - 1))
+        normal.addData3(normalized(2 * x2 - 1, 2 * y1 - 1, 2 * z1 - 1))
+        normal.addData3(normalized(2 * x2 - 1, 2 * y2 - 1, 2 * z2 - 1))
+        normal.addData3(normalized(2 * x1 - 1, 2 * y2 - 1, 2 * z2 - 1))
+
+    else:
+        vertex.addData3(x1, y1, z1)
+        vertex.addData3(x2, y2, z1)
+        vertex.addData3(x2, y2, z2)
+        vertex.addData3(x1, y1, z2)
+
+        normal.addData3(normalized(2 * x1 - 1, 2 * y1 - 1, 2 * z1 - 1))
+        normal.addData3(normalized(2 * x2 - 1, 2 * y2 - 1, 2 * z1 - 1))
+        normal.addData3(normalized(2 * x2 - 1, 2 * y2 - 1, 2 * z2 - 1))
+        normal.addData3(normalized(2 * x1 - 1, 2 * y1 - 1, 2 * z2 - 1))
+
+    # adding different colors to the vertex for visibility
+    color.addData4f(1.0, 0.0, 0.0, 1.0)
+    color.addData4f(0.0, 1.0, 0.0, 1.0)
+    color.addData4f(0.0, 0.0, 1.0, 1.0)
+    color.addData4f(1.0, 0.0, 1.0, 1.0)
+
+    tex_coord.addData2f(0.0, 1.0)
+    tex_coord.addData2f(0.0, 0.0)
+    tex_coord.addData2f(1.0, 0.0)
+    tex_coord.addData2f(1.0, 1.0)
+
+    # Quads aren't directly supported by the Geom interface
+    # you might be interested in the CardMaker class if you are
+    # interested in rectangle though
+    tris = GeomTriangles(Geom.UHDynamic)
+    tris.addVertices(0, 1, 3)
+    tris.addVertices(1, 2, 3)
+
+    square = Geom(v_data)
+    square.addPrimitive(tris)
+    return square
 
 
 class ColorWorld(object):
     def __init__(self):
         self.base = ShowBase()
-        self.base.camera.setPos(1, -20, 3)
-        self.base.camera.setHpr(0.5, 0, 0)
-
-        self.color_image = PNMImage(16, 16)
-        self.color_image.fill(0, 1, 0)
-        self.color_texture = Texture()
-        self.color_texture.load(self.color_image)
-        # test_texture = loader.loadTexture("models/waterfall.JPG")
-
-        cm = CardMaker('card')
-        card = self.base.render.attachNewNode(cm.generate())
-        card.setTexture(self.color_texture)
-        # card.setTexture(test_texture)
-        card.setPos(-5, 0, 0)
-        card.setScale(10)
-
-        self.environ = self.base.loader.loadModel("models/round_courtyard2.bam")
-        self.environ.reparentTo(self.base.render)
-        self.environ.setPos(0, 0, 0)
-
-        self.frameTask = self.base.taskMgr.add(self.frame_loop, "frame_loop")
-        self.frameTask.last = 0
-
-        # Add the spinCameraTask procedure to the task manager.
-        # self.base.taskMgr.add(self.spinCameraTask, "SpinCameraTask")
-
-    # Define a procedure to move the camera.
-    def spinCameraTask(self, task):
-        self.base.camera.setPos(1, -20, 3)
-        self.base.camera.setHpr(0.5, 0, 0)
-        for r in range(self.color_image.getYSize()):
-            row = self.color_image[r]
-            print('row', row)
-            for xelval in row:
-                pass
-        # angleDegrees = task.time * 6.0
-        # angleRadians = angleDegrees * (pi / 180.0)
-        # self.base.camera.setPos(20 * sin(angleRadians), -20.0 * cos(angleRadians), 3)
-        # self.base.camera.setHpr(angleDegrees, 0, 0)
-        # print self.base.camera.getPos()
-        # print self.base.camera.getH()
-        return Task.cont
-
-    def frame_loop(self, task):
-        dt = task.time - task.last
-        task.last = task.time
-        self.base.camera.setPos(1, -20, 3)
-        self.base.camera.setHpr(0.5, 0, 0)
-        #self.move_ball(dt)
-        return task.cont
-
+        self.base.disableMouse()
+        self.base.camera.setPos(0, -10, 0)
+        square = make_square(-1, -1, -1, 1, -1, 1)
+        sq_node = GeomNode('square')
+        sq_node.addGeom(square)
+        self.base.render.attachNewNode(sq_node)
 
 if __name__ == "__main__":
     CW = ColorWorld()
