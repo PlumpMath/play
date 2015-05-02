@@ -52,6 +52,11 @@ class ColorWorld(DirectObject):
         props.setCursorHidden(True)
         self.base.win.requestProperties(props)
         self.base.disableMouse()
+        self.color_min = 0.1
+        self.color_max = 0.6
+        self.red = 0.35
+        self.green = 0.35
+        self.blue = 0.35
 
         if map_avatar:
             self.setup_display2()
@@ -71,6 +76,7 @@ class ColorWorld(DirectObject):
         self.setup_inputs()
         self.frameTask = self.base.taskMgr.add(self.frame_loop, "frame_loop")
         self.frameTask.last = 0  # task time of the last frame
+        self.base.setBackgroundColor(self.red, self.green, self.blue)
         # print 'end init'
 
     def frame_loop(self, task):
@@ -79,7 +85,9 @@ class ColorWorld(DirectObject):
         self.poll_joystick()
         self.poll_keyboard()
         move = self.move_avatar(dt)
-        self.move_map_avatar(move)
+        stop = self.change_background(move)
+        self.move_map_avatar(move, stop)
+
         return task.cont
 
     def poll_joystick(self):
@@ -153,19 +161,62 @@ class ColorWorld(DirectObject):
             # print 'velocity', self.velocity
             # this makes for smooth movement
             move = self.velocity * self.vel_base * dt
+            # print move
             self.avatar.setFluidPos(self.avatar, move)
         return move
 
-    def move_map_avatar(self, move):
+    def change_background(self, move):
+        stop = [False, False]
+        if move:
+            #move *= 0.003
+            move *= 0.1
+            # colors map to x and y, blue changes with both x and y
+            #print('r,g,b', self.red, self.green, self.blue)
+            #print('move', move)
+            self.blue -= move[0]
+            self.green += move[0]
+            self.red += move[1]
+            self.blue -= move[1]
+            #print('r,g,b', self.red, self.green, self.blue)
+            if self.blue > 0.6:
+                print 'max blue'
+                self.blue = 0.6
+            if self.blue < 0.1:
+                print 'min blue'
+                self.blue = 0.1
+            if self.green > 0.6:
+                print 'max green'
+                self.green = 0.6
+                stop[0] = True
+            if self.green < 0.1:
+                print 'min green'
+                self.green = 0.1
+                stop[0] = True
+            if self.red > 0.6:
+                print 'max red'
+                self.red = 0.6
+                stop[1] = True
+            if self.red < 0.1:
+                print 'min red'
+                self.red = 0.1
+                stop[1] = True
+            print('r,g,b', self.red, self.green, self.blue)
+            self.base.setBackgroundColor(self.red, self.green, self.blue)
+        return stop
+
+    def move_map_avatar(self, move, stop):
         # print move
         if move:
-            move *= 0.01
             avt = LineSegs()
             avt.setThickness(1)
             avt.setColor(1, 1, 1)
             # print 'last', self.last_avt
             avt.move_to(self.last_avt[0], 1, self.last_avt[1])
             new_move = [i + j for i, j in zip(self.last_avt, move)]
+            if stop[0]:
+                new_move[0] = self.last_avt[0]
+            if stop[1]:
+                new_move[1] = self.last_avt[1]
             # print 'new', new_move
             self.last_avt = [new_move[0], new_move[1]]
             avt.draw_to(new_move[0], 1, new_move[1])
@@ -184,14 +235,14 @@ class ColorWorld(DirectObject):
     def setup_display2(self):
         props = WindowProperties()
         props.setCursorHidden(True)
-        props.setSize(400, 400)
-        props.setOrigin(128, 128)
+        props.setSize(500, 500)
+        props.setOrigin(50, 50)
         window2 = self.base.openWindow(props=props, aspectRatio=1)
         self.render2 = NodePath('render2')
         camera = self.base.camList[-1]
         camera.reparentTo(self.render2)
         camera.setPos(0, -5, 0)
-        square = make_square(-1, -1, -1, 1, -1, 1)
+        square = make_square(-1, -1, -1, 1, -1, 1, 'blue')
         sq_node = GeomNode('square')
         sq_node.addGeom(square)
         self.render2.attach_new_node(sq_node)

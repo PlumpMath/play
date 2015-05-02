@@ -14,7 +14,7 @@ def normalized(*args):
 
 # helper function to make a square given the Lower-Left-Hand and
 # Upper-Right-Hand corners
-def make_square(x1, y1, z1, x2, y2, z2):
+def make_square(x1, y1, z1, x2, y2, z2, sq_color):
     v_format = GeomVertexFormat.getV3n3cpt2()
     v_data = GeomVertexData('square', v_format, Geom.UHDynamic)
 
@@ -47,10 +47,28 @@ def make_square(x1, y1, z1, x2, y2, z2):
         normal.addData3(normalized(2 * x1 - 1, 2 * y1 - 1, 2 * z2 - 1))
 
     # adding different colors to the vertex for visibility
-    color.addData4f(1.0, 0.0, 0.0, 1.0)
-    color.addData4f(0.0, 1.0, 0.0, 1.0)
-    color.addData4f(0.0, 0.0, 1.0, 1.0)
-    color.addData4f(1.0, 0.0, 1.0, 1.0)
+    # color.addData4f(1.0, 0.0, 0.0, 1.0)
+    # color.addData4f(0.0, 1.0, 0.0, 1.0)
+    # color.addData4f(0.0, 0.0, 1.0, 1.0)
+    # color.addData4f(1.0, 0.0, 1.0, 1.0)
+    if sq_color == 'blue':
+        # Blue space
+        color.addData4f(0.1, 0.1, 0.6, 1.0)  # (0, 0) bottom left
+        color.addData4f(0.1, 0.6, 0.1, 1.0)  # (0.5, 0) bottom right
+        color.addData4f(0.6, 0.6, 0.1, 1.0)  # (0.5, 0.5) top right
+        color.addData4f(0.6, 0.1, 0.1, 1.0)  # (0, 0.5) top left
+    elif sq_color == 'red':
+        # Red space
+        color.addData4f(1.0, 0.0, 0.0, 1.0)  # (0, 0) bottom left
+        color.addData4f(0.5, 0.0, 0.5, 1.0)  # (0.5, 0) bottom right
+        color.addData4f(0.0, 0.5, 0.5, 1.0)  # (0.5, 0.5) top right
+        color.addData4f(0.5, 0.5, 0.0, 1.0)  # (0, 0.5) top left
+    elif sq_color == 'green':
+        # Green space
+        color.addData4f(0.0, 1.0, 0.0, 1.0)  # (0, 0) bottom left
+        color.addData4f(0.0, 0.5, 0.5, 1.0)  # (0.5, 0) bottom right
+        color.addData4f(0.5, 0.0, 0.5, 1.0)  # (0.5, 0.5) top right
+        color.addData4f(0.5, 0.5, 0.0, 1.0)  # (0, 0.5) top left
 
     tex_coord.addData2f(0.0, 1.0)
     tex_coord.addData2f(0.0, 0.0)
@@ -74,7 +92,9 @@ class ColorWorld(object):
         self.base = ShowBase()
         self.base.disableMouse()
         self.base.camera.setPos(0, -10, 0)
-        square = make_square(-1, -1, -1, 1, -1, 1)
+        color = ['red', 'blue', 'green']
+        new_color = color[1]
+        square = make_square(-1, -1, -1, 1, -1, 1, new_color)
         sq_node = GeomNode('square')
         sq_node.addGeom(square)
         self.base.render.attachNewNode(sq_node)
