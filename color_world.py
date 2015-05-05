@@ -70,8 +70,10 @@ class ColorWorld(DirectObject):
         # of both x and y
         self.z_vary = (config['variance'][1] - config['variance'][0])/2
         # self.color_map always corresponds to (r, g, b)
-        self.color_map = make_color_map(config['colors'])
-        print self.color_map
+        self.color_dict = make_color_map(config['colors'])
+        print self.color_dict
+        start_map = [config['static'] if result is None else result for key, result in self.color_dict.iteritems()]
+        print start_map
         # start_map = [config['static'] if i is None else i for i in self.color_map]
         self.variance = config['variance']
         # map avatar variables
