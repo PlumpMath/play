@@ -53,10 +53,10 @@ def make_square(x1, y1, z1, x2, y2, z2, sq_color):
     # color.addData4f(1.0, 0.0, 1.0, 1.0)
     if sq_color == 'blue':
         # Blue space
-        color.addData4f(0.1, 0.1, 0.6, 1.0)  # (0, 0) bottom left
-        color.addData4f(0.1, 0.6, 0.1, 1.0)  # (0.5, 0) bottom right
-        color.addData4f(0.6, 0.6, 0.1, 1.0)  # (0.5, 0.5) top right
-        color.addData4f(0.6, 0.1, 0.1, 1.0)  # (0, 0.5) top left
+        color.addData4f(0.1, 0.1, 0.35, 1.0)  # (0, 0) bottom left
+        color.addData4f(0.1, 0.6, 0.35, 1.0)  # (0.5, 0) bottom right
+        color.addData4f(0.6, 0.6, 0.35, 1.0)  # (0.5, 0.5) top right
+        color.addData4f(0.6, 0.1, 0.35, 1.0)  # (0, 0.5) top left
     elif sq_color == 'red':
         # Red space
         color.addData4f(1.0, 0.0, 0.0, 1.0)  # (0, 0) bottom left

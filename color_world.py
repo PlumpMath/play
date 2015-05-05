@@ -15,6 +15,29 @@ except ImportError:
 # from direct.gui.OnscreenImage import OnscreenImage
 
 
+def make_color_map(colors):
+    # map which color maps to r,g,b
+    axis_map = ['x_axis', 'y_axis', 'z_axis']
+    color_map = {'x_axis': None, 'y_axis': None, 'z_axis': None}
+    # color_map = [None, None, None]
+    axis_keys = [None, None, None]
+    for i, j in enumerate(colors):
+        if j == 'r':
+            axis_keys[0] = i
+            color_map[axis_map[i]] = 0
+            # color_map[0] = axis_map[i]
+        elif j == 'g':
+            axis_keys[1] = i
+            color_map[axis_map[i]] = 1
+            # color_map[1] = axis_map[i]
+        elif j == 'b':
+            axis_keys[2] = i
+            color_map[axis_map[i]] = 2
+            # color_map[2] = axis_map[i]
+    print axis_keys
+    return color_map
+
+
 class ColorWorld(DirectObject):
     def __init__(self):
         DirectObject.__init__(self)
@@ -38,6 +61,19 @@ class ColorWorld(DirectObject):
             # threshold for joystick
             self.threshold = 0.1
         print self.joystick
+        config = {}
+        execfile('color_config.py', config)
+        # starting position is middle of space.
+        self.x_vary = (config['variance'][1] - config['variance'][0])/2
+        self.y_vary = (config['variance'][1] - config['variance'][0])/2
+        # technically speaking, there is no z, it is just a function
+        # of both x and y
+        self.z_vary = (config['variance'][1] - config['variance'][0])/2
+        # self.color_map always corresponds to (r, g, b)
+        self.color_map = make_color_map(config['colors'])
+        print self.color_map
+        # start_map = [config['static'] if i is None else i for i in self.color_map]
+        self.variance = config['variance']
         # map avatar variables
         self.render2 = None
         self.render2d = None
@@ -52,18 +88,13 @@ class ColorWorld(DirectObject):
         props.setCursorHidden(True)
         self.base.win.requestProperties(props)
         self.base.disableMouse()
-        self.color_min = 0.1
-        self.color_max = 0.6
-        self.red = 0.35
-        self.green = 0.35
-        self.blue = 0.35
 
         if map_avatar:
             self.setup_display2()
 
-        courtyard = self.base.loader.loadModel('../goBananas/models/play_space/round_courtyard.bam')
-        courtyard.reparentTo(self.base.render)
-        courtyard.setPos(0, 0, 0)
+        # courtyard = self.base.loader.loadModel('../goBananas/models/play_space/round_courtyard.bam')
+        # courtyard.reparentTo(self.base.render)
+        # courtyard.setPos(0, 0, 0)
 
         # create the avatar
         self.avatar = NodePath(ActorNode("avatar"))
@@ -76,7 +107,7 @@ class ColorWorld(DirectObject):
         self.setup_inputs()
         self.frameTask = self.base.taskMgr.add(self.frame_loop, "frame_loop")
         self.frameTask.last = 0  # task time of the last frame
-        self.base.setBackgroundColor(self.red, self.green, self.blue)
+        self.base.setBackgroundColor(start_map[:])
         # print 'end init'
 
     def frame_loop(self, task):
@@ -171,37 +202,49 @@ class ColorWorld(DirectObject):
             #move *= 0.003
             move *= 0.1
             # colors map to x and y, blue changes with both x and y
-            #print('r,g,b', self.red, self.green, self.blue)
-            #print('move', move)
-            self.blue -= move[0]
-            self.green += move[0]
-            self.red += move[1]
-            self.blue -= move[1]
-            #print('r,g,b', self.red, self.green, self.blue)
-            if self.blue > 0.6:
-                print 'max blue'
-                self.blue = 0.6
-            if self.blue < 0.1:
-                print 'min blue'
-                self.blue = 0.1
-            if self.green > 0.6:
-                print 'max green'
-                self.green = 0.6
-                stop[0] = True
-            if self.green < 0.1:
-                print 'min green'
-                self.green = 0.1
-                stop[0] = True
-            if self.red > 0.6:
-                print 'max red'
-                self.red = 0.6
-                stop[1] = True
-            if self.red < 0.1:
-                print 'min red'
-                self.red = 0.1
-                stop[1] = True
-            print('r,g,b', self.red, self.green, self.blue)
-            self.base.setBackgroundColor(self.red, self.green, self.blue)
+            # print('r,g,b', self.red, self.green, self.blue)
+            # print('move', move)
+            # self.blue -= move[0]
+            print self.color_map
+            print 'should change by ', move
+
+            self.x_vary += move[0]
+            self.y_vary += move[1]
+            print self.color_map
+            # self.blue -= move[1]
+            # print('r,g,b', self.red, self.green, self.blue)
+            for i, j in enumerate(self.color_map):
+                if j < self.variance[0]:
+                    self.color_map[i] = self.variance[0]
+                    stop[i] = True
+                if j > self.variance[1]:
+                    self.color_map[i] = self.variance[1]
+                    stop[i] = True
+            # if self.blue > 0.6:
+            #     print 'max blue'
+            #     self.blue = 0.6
+            # if self.blue < 0.1:
+            #     print 'min blue'
+            #     self.blue = 0.1
+            # if self.green > 0.6:
+            #     print 'max green'
+            #     self.green = 0.6
+            #     stop[0] = True
+            # if self.green < 0.1:
+            #     print 'min green'
+            #     self.green = 0.1
+            #     stop[0] = True
+            # if self.red > 0.6:
+            #     print 'max red'
+            #     self.red = 0.6
+            #     stop[1] = True
+            # if self.red < 0.1:
+            #     print 'min red'
+            #     self.red = 0.1
+            #     stop[1] = True
+            # print('r,g,b', self.red, self.green, self.blue)
+            # self.base.setBackgroundColor(self.red, self.green, self.blue)
+            self.base.setBackgroundColor(self.color_map[:])
         return stop
 
     def move_map_avatar(self, move, stop):
