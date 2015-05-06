@@ -11,3 +11,5 @@ variance = [0.2, 0.7]
 # if there is a color that does not vary,
 # this is its value
 static = 0.1
+
+resolution = [1024, 768]

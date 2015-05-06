@@ -3,7 +3,7 @@ from direct.showbase.DirectObject import DirectObject
 from direct.actor.Actor import ActorNode, Camera
 from panda3d.core import WindowProperties, NodePath, LVector3, KeyboardButton
 from panda3d.core import GeomNode, LineSegs
-from color import make_square
+from color import make_square, make_color_vertices
 import sys
 try:
     import pygame
@@ -16,7 +16,17 @@ except ImportError:
 
 
 def make_color_map(colors):
-    # map which color maps to r,g,b
+    # colors is a list that corresponds to (x, y, z) so
+    # ('b', 'r') means blue varies with x, and red with y
+    # this is a 2 dimensional space, so z corresponds to varies
+    # with both x and y
+    #
+    # output is a dictionary, that shows mapping from x,y,z space to color space
+    # second output is a list of which corresponds to (r,g,b) so if colors was ('b', 'g')
+    # axis_keys will be (None, 1, 0) because red is not changing, green is changing with y,
+    # and blue is changing with x. color_map would be {'x_axis': 2, 'y_axis': 1, 'z_axis': None,
+    # 0: None, 1: 1, 2: 0}
+    # r: None, g: y, b: x
     axis_map = ['x_axis', 'y_axis', 'z_axis']
     color_map = {'x_axis': None, 'y_axis': None, 'z_axis': None, 0: None, 1: None, 2: None}
     # color_map = [None, None, None]
@@ -40,54 +50,12 @@ def make_color_map(colors):
     return color_map, axis_keys
 
 
-def make_color_vertices(config):
-    # make bottom left, right, top right, left
-    # [(xmin, ymin), (xmax, ymin), (xmax, ymax), (ymax, xmin)]
-    test = ['r', 'g', 'b']
-    # append to the end to make sure we have 3 indices.
-    config['colors'].append(None)
-    # set the starting matrix with ones for everything, so don't have to worry about alpha
-    color_vertices = [[1] * 4 for i in range(4)]
-    for i in test:
-        if i == config['colors'][0]:
-            # x coordinate
-            color_vertices[0][test.index(i)] = config['variance'][0]  # bottom left
-            color_vertices[1][test.index(i)] = config['variance'][1]  # bottom right
-            color_vertices[2][test.index(i)] = config['variance'][1]  # top right
-            color_vertices[3][test.index(i)] = config['variance'][0]  # top left
-        elif i == config['colors'][1]:
-            # y coordinate
-            color_vertices[0][test.index(i)] = config['variance'][0]  # bottom left
-            color_vertices[1][test.index(i)] = config['variance'][0]  # bottom right
-            color_vertices[2][test.index(i)] = config['variance'][1]  # top right
-            color_vertices[3][test.index(i)] = config['variance'][1]  # top left
-        elif i == config['colors'][2]:
-            # this definitely needs testing. not even sure what I want to happen here...
-            # if I use the mid for bottom right and top left, I have something very similar
-            # to what I have with two colors, the only difference is the bottom left corner
-            mid = config['variance'][0] + (config['variance'][1] - config['variance'][0])/2
-            color_vertices[0][test.index(i)] = config['variance'][1]  # bottom left
-            color_vertices[1][test.index(i)] = mid  # bottom right
-            color_vertices[2][test.index(i)] = config['variance'][0]  # top right
-            color_vertices[3][test.index(i)] = mid  # top left
-            # color_vertices[0][test.index(i)] = config['variance'][1]  # bottom left
-            # color_vertices[1][test.index(i)] = config['variance'][0]  # bottom right
-            # color_vertices[2][test.index(i)] = config['variance'][0]  # top right
-            # color_vertices[3][test.index(i)] = config['variance'][0]  # top left
-        else:
-            for j in range(4):
-                color_vertices[j][test.index(i)] = config['static']
-    # print 'what i did', color_vertices
-    return [tuple(i) for i in color_vertices]
-
-
 class ColorWorld(DirectObject):
     def __init__(self):
         DirectObject.__init__(self)
         # joystick
         js_count = 0
         self.joystick = None
-        map_avatar = True
         if pygame:
             pygame.init()
             js_count = pygame.joystick.get_count()
@@ -131,14 +99,20 @@ class ColorWorld(DirectObject):
         self.max_vel = [500, 500, 0]
 
         self.base = ShowBase()
+        self.base.disableMouse()
         props = WindowProperties()
         props.setCursorHidden(True)
+        print config.get('resolution')
+        if config.get('resolution'):
+            props.set_size(int(config['resolution'][0]), int(config['resolution'][1]))
+            props.set_origin(0, 0)
+        else:
+            props.set_size(600, 600)
+            props.set_origin(400, 50)
         self.base.win.requestProperties(props)
-        self.base.disableMouse()
-
-        if map_avatar:
-            sq_colors = make_color_vertices(config)
-            self.setup_display2(sq_colors)
+        print self.base.win.get_size()
+        sq_node = self.setup_square(config)
+        self.setup_display2(sq_node, config)
 
         # courtyard = self.base.loader.loadModel('../goBananas/models/play_space/round_courtyard.bam')
         # courtyard.reparentTo(self.base.render)
@@ -308,30 +282,32 @@ class ColorWorld(DirectObject):
     def setup_inputs(self):
         self.accept('q', self.close)
 
-    def setup_display2(self, color_vertices):
+    def setup_display2(self, display_node, config):
         props = WindowProperties()
         props.setCursorHidden(True)
-        props.setSize(500, 500)
-        props.setOrigin(50, 50)
+        if config.get('resolution'):
+            props.setSize(750, 750)
+            props.setOrigin(-int(config['resolution'][0]), 0)
+        else:
+            props.setSize(300, 300)
+            props.setOrigin(10, 10)
         window2 = self.base.openWindow(props=props, aspectRatio=1)
         self.render2 = NodePath('render2')
         camera = self.base.camList[-1]
         camera.reparentTo(self.render2)
         camera.setPos(0, -5, 0)
-        # color_vertices = [(0.2, 0.2, 0.1, 1),
-        #                   (0.2, 0.7, 0.1, 1),
-        #                   (0.7, 0.7, 0.1, 1),
-        #                   (0.7, 0.2, 0.1, 1)]
-        square = make_square(color_vertices)
-        sq_node = GeomNode('square')
-        sq_node.addGeom(square)
-        self.render2.attach_new_node(sq_node)
+        self.render2.attach_new_node(display_node)
         print 'render2', self.render2
         self.render2d = NodePath('render2d')
         camera2d = self.base.makeCamera(window2)
         camera2d.reparentTo(self.render2d)
-        # env = self.base.loader.loadModel('environment.egg')
-        # env.reparentTo(self.render2)
+
+    def setup_square(self, config):
+        sq_colors = make_color_vertices(config)
+        square = make_square(sq_colors)
+        sq_node = GeomNode('square')
+        sq_node.addGeom(square)
+        return sq_node
 
     def close(self):
         pygame.quit()

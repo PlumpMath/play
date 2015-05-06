@@ -81,6 +81,48 @@ def make_square(sq_color):
     return square
 
 
+# helper function to make the color vertices
+def make_color_vertices(config):
+    # make bottom left, right, top right, left
+    # [(xmin, ymin), (xmax, ymin), (xmax, ymax), (ymax, xmin)]
+    test = ['r', 'g', 'b']
+    # append to the end to make sure we have 3 indices.
+    config['colors'].append(None)
+    # set the starting matrix with ones for everything, so don't have to worry about alpha
+    color_vertices = [[1] * 4 for i in range(4)]
+    for i in test:
+        if i == config['colors'][0]:
+            # x coordinate
+            color_vertices[0][test.index(i)] = config['variance'][0]  # bottom left
+            color_vertices[1][test.index(i)] = config['variance'][1]  # bottom right
+            color_vertices[2][test.index(i)] = config['variance'][1]  # top right
+            color_vertices[3][test.index(i)] = config['variance'][0]  # top left
+        elif i == config['colors'][1]:
+            # y coordinate
+            color_vertices[0][test.index(i)] = config['variance'][0]  # bottom left
+            color_vertices[1][test.index(i)] = config['variance'][0]  # bottom right
+            color_vertices[2][test.index(i)] = config['variance'][1]  # top right
+            color_vertices[3][test.index(i)] = config['variance'][1]  # top left
+        elif i == config['colors'][2]:
+            # this definitely needs testing. not even sure what I want to happen here...
+            # if I use the mid for bottom right and top left, I have something very similar
+            # to what I have with two colors, the only difference is the bottom left corner
+            mid = config['variance'][0] + (config['variance'][1] - config['variance'][0])/2
+            color_vertices[0][test.index(i)] = config['variance'][1]  # bottom left
+            color_vertices[1][test.index(i)] = mid  # bottom right
+            color_vertices[2][test.index(i)] = config['variance'][0]  # top right
+            color_vertices[3][test.index(i)] = mid  # top left
+            # color_vertices[0][test.index(i)] = config['variance'][1]  # bottom left
+            # color_vertices[1][test.index(i)] = config['variance'][0]  # bottom right
+            # color_vertices[2][test.index(i)] = config['variance'][0]  # top right
+            # color_vertices[3][test.index(i)] = config['variance'][0]  # top left
+        else:
+            for j in range(4):
+                color_vertices[j][test.index(i)] = config['static']
+    # print 'what i did', color_vertices
+    return [tuple(i) for i in color_vertices]
+
+
 class ColorWorld(object):
     def __init__(self):
         self.base = ShowBase()
