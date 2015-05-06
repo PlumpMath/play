@@ -117,7 +117,7 @@ class ColorWorld(DirectObject):
                 self.color_list[i] = config['static']
 
         # self.color_list = [config['static'] if i is None else i for i in axis_keys]
-        print 'start color', self.color_list
+        print 'start color',  self.color_list
 
         # start_map = [config['static'] if i is None else i for i in self.color_map]
         self.variance = config['variance']
@@ -322,7 +322,7 @@ class ColorWorld(DirectObject):
         #                   (0.2, 0.7, 0.1, 1),
         #                   (0.7, 0.7, 0.1, 1),
         #                   (0.7, 0.2, 0.1, 1)]
-        square = make_square(-1, -1, -1, 1, -1, 1, color_vertices)
+        square = make_square(color_vertices)
         sq_node = GeomNode('square')
         sq_node.addGeom(square)
         self.render2.attach_new_node(sq_node)
