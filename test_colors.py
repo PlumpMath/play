@@ -17,5 +17,17 @@ class ColorWorldTests(unittest.TestCase):
         known = {'x_axis': 0, 'y_axis': 2, 'z_axis': 1, 0: 0, 1: 2, 2: 1}
         self.assertEqual(color_map, known)
 
+    def test_make_color_vertices(self):
+        config = {'colors': ['g', 'r'],
+                  'variance': [0.2, 0.7],
+                  'static': 0.1}
+        # green on x axis, red on y axis, blue static
+        color_vertices = cw.make_color_vertices(config)
+        known = [(0.2, 0.2, 0.1, 1),
+                 (0.2, 0.7, 0.1, 1),
+                 (0.7, 0.7, 0.1, 1),
+                 (0.7, 0.2, 0.1, 1)]
+        self.assertEqual(color_vertices, known)
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)

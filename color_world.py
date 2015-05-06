@@ -40,6 +40,47 @@ def make_color_map(colors):
     return color_map, axis_keys
 
 
+def make_color_vertices(config):
+    # make bottom left, right, top right, left
+    # [(xmin, ymin), (xmax, ymin), (xmax, ymax), (ymax, xmin)]
+    test = ['r', 'g', 'b']
+    # append to the end to make sure we have 3 indices.
+    config['colors'].append(None)
+    # set the starting matrix with ones for everything, so don't have to worry about alpha
+    color_vertices = [[1] * 4 for i in range(4)]
+    for i in test:
+        if i == config['colors'][0]:
+            # x coordinate
+            color_vertices[0][test.index(i)] = config['variance'][0]  # bottom left
+            color_vertices[1][test.index(i)] = config['variance'][1]  # bottom right
+            color_vertices[2][test.index(i)] = config['variance'][1]  # top right
+            color_vertices[3][test.index(i)] = config['variance'][0]  # top left
+        elif i == config['colors'][1]:
+            # y coordinate
+            color_vertices[0][test.index(i)] = config['variance'][0]  # bottom left
+            color_vertices[1][test.index(i)] = config['variance'][0]  # bottom right
+            color_vertices[2][test.index(i)] = config['variance'][1]  # top right
+            color_vertices[3][test.index(i)] = config['variance'][1]  # top left
+        elif i == config['colors'][2]:
+            # this definitely needs testing. not even sure what I want to happen here...
+            # if I use the mid for bottom right and top left, I have something very similar
+            # to what I have with two colors, the only difference is the bottom left corner
+            mid = config['variance'][0] + (config['variance'][1] - config['variance'][0])/2
+            color_vertices[0][test.index(i)] = config['variance'][1]  # bottom left
+            color_vertices[1][test.index(i)] = mid  # bottom right
+            color_vertices[2][test.index(i)] = config['variance'][0]  # top right
+            color_vertices[3][test.index(i)] = mid  # top left
+            # color_vertices[0][test.index(i)] = config['variance'][1]  # bottom left
+            # color_vertices[1][test.index(i)] = config['variance'][0]  # bottom right
+            # color_vertices[2][test.index(i)] = config['variance'][0]  # top right
+            # color_vertices[3][test.index(i)] = config['variance'][0]  # top left
+        else:
+            for j in range(4):
+                color_vertices[j][test.index(i)] = config['static']
+    # print 'what i did', color_vertices
+    return [tuple(i) for i in color_vertices]
+
+
 class ColorWorld(DirectObject):
     def __init__(self):
         DirectObject.__init__(self)
@@ -66,8 +107,9 @@ class ColorWorld(DirectObject):
         config = {}
         execfile('color_config.py', config)
         # starting position is middle of space.
-        pos = (config['variance'][1] - config['variance'][0])/2
+        pos = config['variance'][0] + (config['variance'][1] - config['variance'][0])/2
         self.color_list = [pos, pos, pos]
+
         # self.color_map always corresponds to (r, g, b)
         self.color_dict, axis_keys = make_color_map(config['colors'])
         for i, j in enumerate(axis_keys):
@@ -75,7 +117,7 @@ class ColorWorld(DirectObject):
                 self.color_list[i] = config['static']
 
         # self.color_list = [config['static'] if i is None else i for i in axis_keys]
-        print self.color_list
+        print 'start color', self.color_list
 
         # start_map = [config['static'] if i is None else i for i in self.color_map]
         self.variance = config['variance']
@@ -95,11 +137,12 @@ class ColorWorld(DirectObject):
         self.base.disableMouse()
 
         if map_avatar:
-            self.setup_display2()
+            sq_colors = make_color_vertices(config)
+            self.setup_display2(sq_colors)
 
-        courtyard = self.base.loader.loadModel('../goBananas/models/play_space/round_courtyard.bam')
-        courtyard.reparentTo(self.base.render)
-        courtyard.setPos(0, 0, 0)
+        # courtyard = self.base.loader.loadModel('../goBananas/models/play_space/round_courtyard.bam')
+        # courtyard.reparentTo(self.base.render)
+        # courtyard.setPos(0, 0, 0)
 
         # create the avatar
         self.avatar = NodePath(ActorNode("avatar"))
@@ -171,6 +214,9 @@ class ColorWorld(DirectObject):
                     y_speed = self.velocity.y
                 else:
                     y_speed = -self.velocity.y
+        else:
+            self.velocity.x = 0
+            self.velocity.y = 0
         if is_down(KeyboardButton.up()):
             self.velocity.y += y_speed
         if is_down(KeyboardButton.down()):
@@ -204,8 +250,8 @@ class ColorWorld(DirectObject):
     def change_background(self, move):
         stop = [False, False]
         if move:
-            move *= 0.003
-            #move *= 0.1
+            #move *= 0.003
+            move *= 0.1
             # colors map to x and y, blue changes with both x and y
             # print('r,g,b', self.red, self.green, self.blue)
             # print('move', move)
@@ -214,7 +260,7 @@ class ColorWorld(DirectObject):
             # print 'should change by ', move
             self.color_list[self.color_dict['x_axis']] += move[0]
             self.color_list[self.color_dict['y_axis']] += move[1]
-            # print self.color_list
+
             # self.blue -= move[1]
             # print('r,g,b', self.red, self.green, self.blue)
             for i, j in enumerate(self.color_list):
@@ -222,13 +268,16 @@ class ColorWorld(DirectObject):
                     continue
                 if j < self.variance[0]:
                     self.color_list[i] = self.variance[0]
-                    stop[i] = True
-                    print('min')
+                    # stop corresponds to x and y
+                    stop[self.color_dict[i]] = True
+                    # print('min')
                 if j > self.variance[1]:
                     self.color_list[i] = self.variance[1]
-                    stop[i] = True
-                    print('max')
+                    stop[self.color_dict[i]] = True
+                    # print('max')
+            # print self.color_list[:]
             self.base.setBackgroundColor(self.color_list[:])
+            # print self.base.getBackgroundColor()
         return stop
 
     def move_map_avatar(self, move, stop):
@@ -259,7 +308,7 @@ class ColorWorld(DirectObject):
     def setup_inputs(self):
         self.accept('q', self.close)
 
-    def setup_display2(self):
+    def setup_display2(self, color_vertices):
         props = WindowProperties()
         props.setCursorHidden(True)
         props.setSize(500, 500)
@@ -269,7 +318,11 @@ class ColorWorld(DirectObject):
         camera = self.base.camList[-1]
         camera.reparentTo(self.render2)
         camera.setPos(0, -5, 0)
-        square = make_square(-1, -1, -1, 1, -1, 1, 'blue')
+        # color_vertices = [(0.2, 0.2, 0.1, 1),
+        #                   (0.2, 0.7, 0.1, 1),
+        #                   (0.7, 0.7, 0.1, 1),
+        #                   (0.7, 0.2, 0.1, 1)]
+        square = make_square(-1, -1, -1, 1, -1, 1, color_vertices)
         sq_node = GeomNode('square')
         sq_node.addGeom(square)
         self.render2.attach_new_node(sq_node)
