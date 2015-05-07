@@ -1,3 +1,4 @@
+from __future__ import division
 from direct.showbase.ShowBase import ShowBase
 from direct.showbase.DirectObject import DirectObject
 from direct.actor.Actor import ActorNode, Camera
@@ -21,37 +22,35 @@ def make_color_map(colors):
     # this is a 2 dimensional space, so z corresponds to varies
     # with both x and y
     #
-    # output is a dictionary, that shows mapping from x,y,z space to color space
-    # second output is a list of which corresponds to (r,g,b) so if colors was ('b', 'g')
-    # axis_keys will be (None, 1, 0) because red is not changing, green is changing with y,
-    # and blue is changing with x. color_map would be {'x_axis': 2, 'y_axis': 1, 'z_axis': None,
-    # 0: None, 1: 1, 2: 0}
-    # r: None, g: y, b: x
-    axis_map = ['x_axis', 'y_axis', 'z_axis']
-    color_map = {'x_axis': None, 'y_axis': None, 'z_axis': None, 0: None, 1: None, 2: None}
+    # output is a dictionary, that shows mapping from x,y,z space to color space r,g,b
+    # so, if we want (assuming above example input) x:b, y:r, z:None than our dictionary will
+    # be 0:2, 1:0, 2:None
+    color_map = {0: None, 1: None, 2: None}
     # color_map = [None, None, None]
-    axis_keys = [None, None, None]
     for i, j in enumerate(colors):
         if j == 'r':
-            axis_keys[0] = i
-            color_map[axis_map[i]] = 0
-            color_map[0] = i
-            # color_map[0] = axis_map[i]
+            color_map[i] = 0
         elif j == 'g':
-            axis_keys[1] = i
-            color_map[axis_map[i]] = 1
-            color_map[1] = i
-            # color_map[1] = axis_map[i]
+            color_map[i] = 1
         elif j == 'b':
-            axis_keys[2] = i
-            color_map[axis_map[i]] = 2
-            color_map[2] = i
-            # color_map[2] = axis_map[i]
-    return color_map, axis_keys
+            color_map[i] = 2
+    return color_map
+
+
+def set_start_colors(config, color_dict):
+    # starting position is middle of space.
+    pos = config['variance'][0] + (config['variance'][1] - config['variance'][0])/2
+    print('pos', pos)
+    color_list = [pos, pos, pos]
+    # key is x,y,z value is r,g,b
+    for key, value in color_dict.iteritems():
+        if value is None:
+            color_list[value] = config['static']
+    return color_list
 
 
 class ColorWorld(DirectObject):
-    def __init__(self):
+    def __init__(self, config=None):
         DirectObject.__init__(self)
         # joystick
         js_count = 0
@@ -69,25 +68,20 @@ class ColorWorld(DirectObject):
             print self.joystick.get_numaxes()
             # threshold for joystick
             self.threshold = 0.1
-        print self.joystick
+        print('joystick', self.joystick)
         # keep track of velocity, this allows me to counteract joystick with keyboard
         self.velocity = LVector3(0)
-        config = {}
-        execfile('color_config.py', config)
-        # starting position is middle of space.
-        pos = config['variance'][0] + (config['variance'][1] - config['variance'][0])/2
-        self.color_list = [pos, pos, pos]
-
+        if config is None:
+            config = {}
+            execfile('color_config.py', config)
+        # adjustment to speed so corresponds to gobananas task
+        # 7 seconds to cross original environment
+        self.speed = 0.05
         # self.color_map always corresponds to (r, g, b)
-        self.color_dict, axis_keys = make_color_map(config['colors'])
-        for i, j in enumerate(axis_keys):
-            if j is None:
-                self.color_list[i] = config['static']
-
-        # self.color_list = [config['static'] if i is None else i for i in axis_keys]
+        self.color_dict = make_color_map(config['colors'])
+        self.color_list = set_start_colors(config, self.color_dict)
         print 'start color',  self.color_list
-
-        # start_map = [config['static'] if i is None else i for i in self.color_map]
+        print self.color_dict
         self.variance = config['variance']
         # map avatar variables
         self.render2 = None
@@ -100,23 +94,21 @@ class ColorWorld(DirectObject):
 
         self.base = ShowBase()
         self.base.disableMouse()
-        props = WindowProperties()
-        props.setCursorHidden(True)
-        print config.get('resolution')
-        if config.get('resolution'):
-            props.set_size(int(config['resolution'][0]), int(config['resolution'][1]))
-            props.set_origin(0, 0)
-        else:
-            props.set_size(600, 600)
-            props.set_origin(400, 50)
-        self.base.win.requestProperties(props)
-        print self.base.win.get_size()
-        sq_node = self.setup_square(config)
-        self.setup_display2(sq_node, config)
-
-        # courtyard = self.base.loader.loadModel('../goBananas/models/play_space/round_courtyard.bam')
-        # courtyard.reparentTo(self.base.render)
-        # courtyard.setPos(0, 0, 0)
+        # assume we are showing windows unless proven otherwise
+        if config.get('win', True):
+            props = WindowProperties()
+            props.setCursorHidden(True)
+            print config.get('resolution')
+            if config.get('resolution'):
+                props.set_size(int(config['resolution'][0]), int(config['resolution'][1]))
+                props.set_origin(0, 0)
+            else:
+                props.set_size(600, 600)
+                props.set_origin(400, 50)
+            self.base.win.requestProperties(props)
+            print self.base.win.get_size()
+            sq_node = self.setup_square(config)
+            self.setup_display2(sq_node, config)
 
         # create the avatar
         self.avatar = NodePath(ActorNode("avatar"))
@@ -153,7 +145,7 @@ class ColorWorld(DirectObject):
         # axis after, since it will stay at whatever the
         # last signal was, instead of zeroing out whenever
         # no movement. Much more convenient that way.
-        for ev in pygame.event.get():
+        for event in pygame.event.get():
             pass
         x = self.joystick.get_axis(0)
         y = self.joystick.get_axis(1)
@@ -222,33 +214,52 @@ class ColorWorld(DirectObject):
         return move
 
     def change_background(self, move):
-        stop = [False, False]
+        stop = [False, False, False]
         if move:
-            #move *= 0.003
-            move *= 0.1
-            # colors map to x and y, blue changes with both x and y
-            # print('r,g,b', self.red, self.green, self.blue)
-            # print('move', move)
-            # self.blue -= move[0]
-            # print self.color_list
-            # print 'should change by ', move
-            self.color_list[self.color_dict['x_axis']] += move[0]
-            self.color_list[self.color_dict['y_axis']] += move[1]
+            # print move
+            move *= self.speed
+
+            for key, value in self.color_dict.iteritems():
+                if value is not None:
+                    # keys correspond to x,y,z
+                    # values correspond to r,g,b
+                    if key == 2:
+                        # z axis is treated differently
+                        self.color_list[value] -= move[key]
+                    else:
+                        self.color_list[value] += move[key]
+                    if self.color_list[value] < self.variance[0]:
+                        self.color_list[value] = self.variance[0]
+                        stop[key] = True
+                    elif self.color_list[value] > self.variance[1]:
+                        self.color_list[value] = self.variance[1]
+                        stop[key] = True
+
+            # if self.color_dict['x_axis']:
+            #     self.color_list[self.color_dict['x_axis']] += move[0]
+            # else:
+            #     stop[0] = True
+            # if self.color_dict['y_axis']:
+            #     self.color_list[self.color_dict['y_axis']] += move[1]
+            # else:
+            #     stop[1] = True
+            # if self.color_dict['z_axis']:
+            #     self.color_list[self.color_dict['z_axis']] += move[1]
 
             # self.blue -= move[1]
             # print('r,g,b', self.red, self.green, self.blue)
-            for i, j in enumerate(self.color_list):
-                if self.color_dict[i] is None:
-                    continue
-                if j < self.variance[0]:
-                    self.color_list[i] = self.variance[0]
-                    # stop corresponds to x and y
-                    stop[self.color_dict[i]] = True
-                    # print('min')
-                if j > self.variance[1]:
-                    self.color_list[i] = self.variance[1]
-                    stop[self.color_dict[i]] = True
-                    # print('max')
+            # for i, j in enumerate(self.color_list):
+            #     if self.color_dict[i] is None:
+            #         continue
+            #     if j < self.variance[0]:
+            #         self.color_list[i] = self.variance[0]
+            #         # stop corresponds to x and y
+            #         stop[self.color_dict[i]] = True
+            #         # print('min')
+            #     if j > self.variance[1]:
+            #         self.color_list[i] = self.variance[1]
+            #         stop[self.color_dict[i]] = True
+            #         # print('max')
             # print self.color_list[:]
             self.base.setBackgroundColor(self.color_list[:])
             # print self.base.getBackgroundColor()
@@ -256,6 +267,9 @@ class ColorWorld(DirectObject):
 
     def move_map_avatar(self, move, stop):
         # print move
+        # avatar is mapped assuming variance of 0.5. What do I need to
+        # change to use a different variance? variance of one is twice
+        # the
         if move:
             avt = LineSegs()
             avt.setThickness(1)

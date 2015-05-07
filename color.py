@@ -87,7 +87,8 @@ def make_color_vertices(config):
     # [(xmin, ymin), (xmax, ymin), (xmax, ymax), (ymax, xmin)]
     test = ['r', 'g', 'b']
     # append to the end to make sure we have 3 indices.
-    config['colors'].append(None)
+    while len(config['colors']) < 3:
+        config['colors'].append(None)
     # set the starting matrix with ones for everything, so don't have to worry about alpha
     color_vertices = [[1] * 4 for i in range(4)]
     for i in test:
