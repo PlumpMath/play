@@ -40,8 +40,7 @@ class ColorWorldTests(unittest.TestCase):
         config = {'colors': ['b', 'r'],
                   'variance': [0.2, 0.7],
                   'static': 0.1}
-        color_dict = cw.make_color_map(config['colors'])
-        color_list = cw.set_start_colors(config, color_dict)
+        color_list = cw.set_start_colors(config)
         mid = config['variance'][0] + (config['variance'][1] - config['variance'][0])/2
         self.assertEqual([mid, 0.1, mid], color_list)
 

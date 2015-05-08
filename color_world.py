@@ -37,15 +37,15 @@ def make_color_map(colors):
     return color_map
 
 
-def set_start_colors(config, color_dict):
+def set_start_colors(config):
     # starting position is middle of space.
     pos = config['variance'][0] + (config['variance'][1] - config['variance'][0])/2
     print('pos', pos)
+    all_colors = ['r', 'g', 'b']
     color_list = [pos, pos, pos]
-    # key is x,y,z value is r,g,b
-    for key, value in color_dict.iteritems():
-        if value is None:
-            color_list[value] = config['static']
+    for i, j in enumerate(all_colors):
+        if i not in config['colors']:
+            color_list[i] = config['static']
     return color_list
 
 
@@ -79,7 +79,7 @@ class ColorWorld(DirectObject):
         self.speed = 0.05
         # self.color_map always corresponds to (r, g, b)
         self.color_dict = make_color_map(config['colors'])
-        self.color_list = set_start_colors(config, self.color_dict)
+        self.color_list = set_start_colors(config)
         print 'start color',  self.color_list
         print self.color_dict
         self.variance = config['variance']
