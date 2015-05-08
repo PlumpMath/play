@@ -61,7 +61,8 @@ class ColorWorldTests(unittest.TestCase):
         stop = test_cw.change_background(move)
         new_color[0] = 0.5 + (0.1 * test_cw.speed)
         self.assertEqual(test_cw.color_list, new_color)
-        self.assertEqual(stop, [False, False, False])
+        # any color not changing is a direction we are not moving
+        self.assertEqual(stop, [False, False, True])
         test_cw.base.destroy()
 
     def test_change_background_two_axis(self):

@@ -5,6 +5,7 @@ from direct.actor.Actor import ActorNode, Camera
 from panda3d.core import WindowProperties, NodePath, LVector3, KeyboardButton
 from panda3d.core import GeomNode, LineSegs
 from color import make_square, make_color_vertices
+from math import sqrt
 import sys
 try:
     import pygame
@@ -93,7 +94,8 @@ class ColorWorld(DirectObject):
         # 7 seconds to cross original environment
         # speed needs to be adjusted to both speed in original
         # environment and variance of colors
-        self.speed = 0.05 * (self.variance[1] - self.variance[0])
+        # self.speed = 0.05 * (self.variance[1] - self.variance[0])
+        self.speed = 0.05
         # map avatar variables
         self.render2 = None
         self.render2d = None
@@ -226,18 +228,22 @@ class ColorWorld(DirectObject):
         return move
 
     def change_background(self, move):
-        stop = [False, False, False]
+        stop = [True, True, True]
         if move:
             # print move
             move *= self.speed
-
             for key, value in self.color_dict.iteritems():
                 if value is not None:
+                    stop[key] = False
                     # keys correspond to x,y,z
                     # values correspond to r,g,b
                     if key == 2:
+                        # need to work on this. z should
+                        # be at min when both x and y are at max
                         # z axis is treated differently
-                        self.color_list[value] -= move[key]
+                        z_move = (move[0] + move[1])/2
+                        # print z_move
+                        self.color_list[value] -= z_move
                     else:
                         self.color_list[value] += move[key]
                     if self.color_list[value] < self.variance[0]:
@@ -246,7 +252,6 @@ class ColorWorld(DirectObject):
                     elif self.color_list[value] > self.variance[1]:
                         self.color_list[value] = self.variance[1]
                         stop[key] = True
-
             self.base.setBackgroundColor(self.color_list[:])
             # print self.base.getBackgroundColor()
         return stop
