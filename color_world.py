@@ -39,14 +39,22 @@ def make_color_map(colors):
 
 def set_start_colors(config):
     # starting position is middle of space.
-    pos = config['variance'][0] + (config['variance'][1] - config['variance'][0])/2
-    print('pos', pos)
+    mid = config['variance'][0] + (config['variance'][1] - config['variance'][0])/2
+    print('midpoint', mid)
     all_colors = ['r', 'g', 'b']
-    color_list = [pos, pos, pos]
+    color_list = [mid, mid, mid]
     for i, j in enumerate(all_colors):
-        if i not in config['colors']:
+        if j not in config['colors']:
             color_list[i] = config['static']
     return color_list
+
+
+def setup_square(config):
+    sq_colors = make_color_vertices(config)
+    square = make_square(sq_colors)
+    sq_node = GeomNode('square')
+    sq_node.addGeom(square)
+    return sq_node
 
 
 class ColorWorld(DirectObject):
@@ -74,20 +82,24 @@ class ColorWorld(DirectObject):
         if config is None:
             config = {}
             execfile('color_config.py', config)
-        # adjustment to speed so corresponds to gobananas task
-        # 7 seconds to cross original environment
-        self.speed = 0.05
+
         # self.color_map always corresponds to (r, g, b)
         self.color_dict = make_color_map(config['colors'])
         self.color_list = set_start_colors(config)
         print 'start color',  self.color_list
         print self.color_dict
         self.variance = config['variance']
+        # adjustment to speed so corresponds to gobananas task
+        # 7 seconds to cross original environment
+        # speed needs to be adjusted to both speed in original
+        # environment and variance of colors
+        self.speed = 0.05 * (self.variance[1] - self.variance[0])
         # map avatar variables
         self.render2 = None
         self.render2d = None
         self.last_avt = [0, 0]
         self.map_avt_node = []
+
         # need a multiplier to the joystick output to tolerable speed
         self.vel_base = 3
         self.max_vel = [500, 500, 0]
@@ -107,7 +119,7 @@ class ColorWorld(DirectObject):
                 props.set_origin(400, 50)
             self.base.win.requestProperties(props)
             print self.base.win.get_size()
-            sq_node = self.setup_square(config)
+            sq_node = setup_square(config)
             self.setup_display2(sq_node, config)
 
         # create the avatar
@@ -235,32 +247,6 @@ class ColorWorld(DirectObject):
                         self.color_list[value] = self.variance[1]
                         stop[key] = True
 
-            # if self.color_dict['x_axis']:
-            #     self.color_list[self.color_dict['x_axis']] += move[0]
-            # else:
-            #     stop[0] = True
-            # if self.color_dict['y_axis']:
-            #     self.color_list[self.color_dict['y_axis']] += move[1]
-            # else:
-            #     stop[1] = True
-            # if self.color_dict['z_axis']:
-            #     self.color_list[self.color_dict['z_axis']] += move[1]
-
-            # self.blue -= move[1]
-            # print('r,g,b', self.red, self.green, self.blue)
-            # for i, j in enumerate(self.color_list):
-            #     if self.color_dict[i] is None:
-            #         continue
-            #     if j < self.variance[0]:
-            #         self.color_list[i] = self.variance[0]
-            #         # stop corresponds to x and y
-            #         stop[self.color_dict[i]] = True
-            #         # print('min')
-            #     if j > self.variance[1]:
-            #         self.color_list[i] = self.variance[1]
-            #         stop[self.color_dict[i]] = True
-            #         # print('max')
-            # print self.color_list[:]
             self.base.setBackgroundColor(self.color_list[:])
             # print self.base.getBackgroundColor()
         return stop
@@ -315,13 +301,6 @@ class ColorWorld(DirectObject):
         self.render2d = NodePath('render2d')
         camera2d = self.base.makeCamera(window2)
         camera2d.reparentTo(self.render2d)
-
-    def setup_square(self, config):
-        sq_colors = make_color_vertices(config)
-        square = make_square(sq_colors)
-        sq_node = GeomNode('square')
-        sq_node.addGeom(square)
-        return sq_node
 
     def close(self):
         pygame.quit()
