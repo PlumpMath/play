@@ -14,6 +14,11 @@ except ImportError:
 
 
 class JoystickWorld(DirectObject):
+    # a bit of a strange example of joystick use, because there is no acceleration, and movement
+    # is literal (forward forward, left is left, etc), iow no turning, no looking around. this is
+    # due to the strange game this code eventually went into, but still a useful example of using
+    # joystick and/or keyboard for movement. Eventually I would like to use this to show different
+    # examples of movement, but at least we see basic implementation, as is.
     def __init__(self, config=None):
         DirectObject.__init__(self)
         # joystick
